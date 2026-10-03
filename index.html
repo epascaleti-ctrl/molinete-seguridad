@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#020617">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+
+  <title>Molinete de Seguridad Móvil | Visita Papal 2026</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- jsQR Engine Ultra Rápido -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; touch-action: manipulation; }
+    body {
+      background-color: #020617;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+    }
+    .laser-line {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      height: 3px;
+      background: #eab308;
+      box-shadow: 0 0 18px #eab308, 0 0 4px #ffffff;
+      animation: laserScan 1.6s infinite ease-in-out;
+    }
+    @keyframes laserScan {
+      0%, 100% { top: 10%; opacity: 0.3; }
+      50% { top: 90%; opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- CABEZAL SUPERIOR -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-lg shadow-md">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white uppercase">App Molinete Móvil</h1>
+        </div>
+        <p class="text-[10px] text-yellow-400 font-semibold">Policía Nacional • Gendarmería Vaticana</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <!-- Botón Instalar App (aparece si está en navegador) -->
+      <button id="btnInstalarApp" onclick="instalarPWA()" class="hidden px-2.5 py-1.5 bg-yellow-400 text-slate-950 rounded-xl text-xs font-black shadow flex items-center gap-1 animate-bounce">
+        <i class="fa-solid fa-download"></i>
+        <span>Instalar App</span>
+      </button>
+
+      <!-- Botón Linterna -->
+      <button id="btnTorch" onclick="toggleTorch()" class="hidden w-9 h-9 bg-slate-800 text-yellow-400 rounded-xl flex items-center justify-center text-sm border border-slate-700" title="Linterna">
+        <i class="fa-solid fa-bolt"></i>
+      </button>
+      
+      <!-- Cambiar Cámara -->
+      <button onclick="cambiarCamara()" class="w-9 h-9 bg-slate-800 text-slate-300 rounded-xl flex items-center justify-center text-sm border border-slate-700" title="Cambiar Cámara">
+        <i class="fa-solid fa-camera-rotate"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="flex-1 p-4 max-w-md mx-auto w-full flex flex-col gap-4">
+
+    <!-- VISOR DE CÁMARA CONTINUA NATIVA 60FPS -->
+    <div class="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-2 border-slate-800 shadow-2xl flex items-center justify-center">
+      
+      <!-- Video Element para Cámara Trasera -->
+      <video id="videoCamara" playsinline autoplay muted class="w-full h-full object-cover"></video>
+      
+      <!-- Retícula Láser de Seguridad -->
+      <div id="laserOverlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6">
+        <div class="relative w-56 h-56 border-2 border-yellow-400/80 rounded-2xl shadow-lg">
+          <div class="laser-line"></div>
+          <div class="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-yellow-400 rounded-tl-lg"></div>
+          <div class="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-yellow-400 rounded-tr-lg"></div>
+          <div class="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-yellow-400 rounded-bl-lg"></div>
+          <div class="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-yellow-400 rounded-br-lg"></div>
+        </div>
+        <p class="text-[11px] text-slate-300 bg-slate-950/85 px-3 py-1 rounded-full mt-4 font-medium border border-slate-800 shadow">
+          <i class="fa-solid fa-qrcode text-yellow-400 mr-1"></i> Apunte al código QR del pase o credencial
+        </p>
+      </div>
+
+      <!-- Pantalla de Activación Inicial (si el navegador requiere un toque) -->
+      <div id="pantallaPermiso" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center space-y-4 z-20">
+        <div class="w-16 h-16 rounded-2xl bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 flex items-center justify-center text-3xl shadow animate-pulse">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base">Escáner de Seguridad</h3>
+          <p class="text-xs text-slate-400 mt-1 max-w-xs">Presiona el botón para encender la cámara y comenzar el escaneo en vivo.</p>
+        </div>
+        <button type="button" onclick="iniciarCamaraStream()" class="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg flex items-center gap-2">
+          <i class="fa-solid fa-play"></i> Encender Cámara
+        </button>
+      </div>
+
+      <!-- Fallback Tomar Foto si la cámara continua no es soportada -->
+      <div class="absolute bottom-3 left-3 right-3 flex justify-center z-10">
+        <label class="bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-[11px] px-3.5 py-1.5 rounded-full border border-slate-700 cursor-pointer flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-image text-yellow-400"></i>
+          <span>Subir Foto / Galería</span>
+          <input type="file" id="inputFotoArchivo" accept="image/*" class="hidden" onchange="procesarFotoSubida(event)">
+        </label>
+      </div>
+
+    </div>
+
+    <!-- BUSCADOR MANUAL RÁPIDO -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm space-y-2">
+      <span class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+        Verificación Manual por Documento o Matrícula
+      </span>
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-id-card absolute left-3 top-3.5 text-slate-400 text-xs"></i>
+          <input 
+            type="text" 
+            id="inputManual" 
+            placeholder="Ej: 35351496 o SBA 1234..." 
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-8 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-yellow-400 font-mono"
+            onkeypress="if(event.key === 'Enter'){ event.preventDefault(); buscarManual(); }"
+          >
+        </div>
+        <button type="button" id="btnVerificarManual" onclick="buscarManual()" class="bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs transition active:scale-95 shadow">
+          Verificar
+        </button>
+      </div>
+    </div>
+
+    <!-- SPINNER DE CONSULTA -->
+    <div id="scannerSpinner" class="hidden text-center py-4 space-y-2">
+      <i class="fa-solid fa-circle-notch fa-spin text-2xl text-yellow-400"></i>
+      <p class="text-xs text-slate-300 font-semibold tracking-wide">Consultando Base de Datos Oficial...</p>
+    </div>
+
+    <!-- CANVAS OCULTO PARA DECODIFICACIÓN -->
+    <canvas id="hiddenCanvas" class="hidden"></canvas>
+
+    <!-- MODAL POPUP DE RESULTADO DE ACCESO -->
+    <div id="resultadoModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-150">
+        
+        <!-- BANNER DE ESTADO -->
+        <div id="estadoBanner" class="p-4 text-center text-white flex flex-col items-center justify-center gap-1">
+          <div id="estadoIcono" class="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-1"></div>
+          <h2 id="estadoTexto" class="text-lg font-black uppercase tracking-wider"></h2>
+          <p id="estadoSubtexto" class="text-[11px] font-semibold opacity-90"></p>
+        </div>
+
+        <!-- CONTENIDO DEL CARNET / VEHÍCULO -->
+        <div class="p-4 space-y-3">
+          
+          <div class="flex gap-3 items-center bg-slate-950/60 p-2.5 rounded-2xl border border-slate-800">
+            <img id="resFoto" src="" alt="Foto" class="w-16 h-20 object-cover rounded-xl border border-slate-700 bg-slate-800 shrink-0">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span id="resTagTipo" class="px-1.5 py-0.5 bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 rounded text-[9px] font-black uppercase tracking-wider"></span>
+                <span id="resSolicitudId" class="text-[10px] text-slate-400 font-mono"></span>
+              </div>
+              <h3 id="resNombre" class="font-bold text-white text-sm truncate"></h3>
+              <p id="resDocumento" class="text-xs text-yellow-400 font-mono font-semibold"></p>
+              <p id="resEmpresa" class="text-[11px] text-slate-400 truncate mt-0.5"></p>
+            </div>
+          </div>
+
+          <!-- DETALLES DE ZONAS Y LOCACIONES -->
+          <div class="grid grid-cols-2 gap-2 text-center text-xs">
+            <div class="bg-slate-950/80 border border-slate-800 p-2 rounded-xl">
+              <span class="block text-[9px] text-slate-500 font-bold uppercase">Locación</span>
+              <span id="resLocaciones" class="font-bold text-white truncate block text-[11px] mt-0.5"></span>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-2 rounded-xl">
+              <span class="block text-[9px] text-slate-500 font-bold uppercase">Zonas SAD</span>
+              <span id="resZonas" class="font-bold text-yellow-400 truncate block text-[11px] mt-0.5"></span>
+            </div>
+          </div>
+
+          <!-- OBSERVACIONES -->
+          <div id="boxObservaciones" class="hidden bg-slate-950 border border-yellow-500/30 p-2.5 rounded-xl text-left">
+            <span class="block text-[9px] font-bold text-yellow-400 uppercase tracking-wider mb-0.5">
+              <i class="fa-solid fa-triangle-exclamation mr-1"></i> Observación de Seguridad
+            </span>
+            <p id="resObservaciones" class="text-[11px] text-slate-300"></p>
+          </div>
+
+          <!-- BOTONES DE ACCIÓN -->
+          <div class="pt-2 flex flex-col gap-2">
+            <button type="button" onclick="cerrarResultado()" class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition active:scale-95 shadow-lg flex items-center justify-center gap-2">
+              <i class="fa-solid fa-check"></i> Siguiente Escaneo
+            </button>
+            <button type="button" onclick="cerrarResultado()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+              <i class="fa-solid fa-arrow-left mr-1"></i> Volver
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PIE DE CONTROL -->
+  <footer class="bg-slate-950 border-t border-slate-900 p-3 text-center text-[10px] text-slate-500">
+    Puesto Móvil de Seguridad • Visita Papal 2026 • Modo Alta Velocidad
+  </footer>
+
+  <script>
+    // URL DE LA API JSON CONECTADA A GOOGLE SHEETS
+    const API_URL = "https://script.google.com/macros/s/AKfycbx9EfTKjISgOwGAsrK98F6aFZkBPm5NOR73sdJCBdgJKTSafDHbSLKINDwnRZSukAU/exec";
+    const SVG_NO_FOTO = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='180' viewBox='0 0 150 180'><rect width='100%' height='100%' fill='%230f172a'/><text x='50%' y='50%' fill='%2364748b' font-size='14' font-family='sans-serif' text-anchor='middle' dy='.3em'>SIN FOTO</text></svg>";
+
+    var streamCamara = null;
+    var scanInterval = null;
+    var isProcessing = false;
+    var trackVideo = null;
+    var torchEnabled = false;
+    var currentFacingMode = "environment";
+    var deferredInstallPrompt = null;
+
+    // Registrar Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('PWA Service Worker Activo:', reg.scope);
+      }).catch(err => console.warn('SW error:', err));
+    }
+
+    // Manejar Evento de Instalación PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const btn = document.getElementById('btnInstalarApp');
+      if (btn) btn.classList.remove('hidden');
+    });
+
+    function instalarPWA() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('btnInstalarApp').classList.add('hidden');
+          }
+          deferredInstallPrompt = null;
+        });
+      }
+    }
+
+    // Auto-iniciar al cargar la App
+    window.addEventListener('DOMContentLoaded', () => {
+      iniciarCamaraStream();
+    });
+
+    // Reproducir Beep Sintetizado con Web Audio API
+    function playBeep(isSuccess = true) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = isSuccess ? 'sine' : 'sawtooth';
+        osc.frequency.setValueAtTime(isSuccess ? 880 : 220, ctx.currentTime); // A5 (Agudo) o A3 (Grave)
+        if (isSuccess) {
+          osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+        }
+
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } catch(e) {}
+    }
+
+    // Vibración Táctil
+    function vibrarTactil(isSuccess = true) {
+      if ('vibrate' in navigator) {
+        try {
+          if (isSuccess) {
+            navigator.vibrate(100);
+          } else {
+            navigator.vibrate([150, 50, 150]);
+          }
+        } catch(e) {}
+      }
+    }
+
+    function iniciarCamaraStream() {
+      const video = document.getElementById('videoCamara');
+      const constraints = {
+        video: {
+          facingMode: { ideal: currentFacingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          streamCamara = stream;
+          trackVideo = stream.getVideoTracks()[0];
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
+
+          document.getElementById('pantallaPermiso').classList.add('hidden');
+          document.getElementById('laserOverlay').classList.remove('hidden');
+
+          // Soporte para linterna
+          const capabilities = trackVideo.getCapabilities ? trackVideo.getCapabilities() : {};
+          if (capabilities.torch) {
+            document.getElementById('btnTorch').classList.remove('hidden');
+          }
+
+          if (scanInterval) clearInterval(scanInterval);
+          scanInterval = setInterval(escanearCuadroVideo, 150);
+        })
+        .catch(err => {
+          console.warn("No se pudo iniciar cámara automáticamente:", err);
+          document.getElementById('pantallaPermiso').classList.remove('hidden');
+        });
+    }
+
+    function cambiarCamara() {
+      if (streamCamara) {
+        streamCamara.getTracks().forEach(t => t.stop());
+      }
+      currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+      iniciarCamaraStream();
+    }
+
+    function toggleTorch() {
+      if (!trackVideo) return;
+      torchEnabled = !torchEnabled;
+      trackVideo.applyConstraints({
+        advanced: [{ torch: torchEnabled }]
+      }).catch(e => console.log('Torch no compatible:', e));
+    }
+
+    function escanearCuadroVideo() {
+      if (isProcessing) return;
+
+      const video = document.getElementById('videoCamara');
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+      const canvas = document.getElementById('hiddenCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "attemptBoth"
+      });
+
+      if (code && code.data && code.data.trim() !== "") {
+        isProcessing = true;
+        procesarTextoLeido(code.data);
+      }
+    }
+
+    function procesarFotoSubida(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('scannerSpinner').classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.getElementById('hiddenCanvas');
+          const ctx = canvas.getContext('2d');
+
+          const MAX_DIM = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > h && w > MAX_DIM) {
+            h = Math.round(h * (MAX_DIM / w));
+            w = MAX_DIM;
+          } else if (h > MAX_DIM) {
+            w = Math.round(w * (MAX_DIM / h));
+            h = MAX_DIM;
+          }
+
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const imageData = ctx.getImageData(0, 0, w, h);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth"
+          });
+
+          if (code && code.data && code.data.trim() !== "") {
+            procesarTextoLeido(code.data);
+          } else {
+            document.getElementById('scannerSpinner').classList.add('hidden');
+            alert("No se detectó un código QR legible en la foto. Intenta enfocar más de cerca.");
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function procesarTextoLeido(rawText) {
+      document.getElementById('scannerSpinner').classList.remove('hidden');
+      var criterio = rawText.trim();
+      if (criterio.indexOf('?') > -1) {
+        var urlParams = new URLSearchParams(criterio.split('?')[1]);
+        if (urlParams.has('q')) {
+          criterio = urlParams.get('q');
+        }
+      }
+      consultarServidor(criterio);
+    }
+
+    function buscarManual() {
+      var val = document.getElementById('inputManual').value.trim();
+      if (!val) {
+        alert("Por favor ingresa un número de Cédula, RUT o Matrícula.");
+        return;
+      }
+      document.getElementById('scannerSpinner').classList.remove('hidden');
+      consultarServidor(val);
+    }
+
+    function consultarServidor(criterio) {
+      fetch(`${API_URL}?action=search&q=${encodeURIComponent(criterio)}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('scannerSpinner').classList.add('hidden');
+          mostrarModalResultado(data, criterio);
+        })
+        .catch(err => {
+          console.warn("Fallo API:", err);
+          document.getElementById('scannerSpinner').classList.add('hidden');
+          mostrarModalResultado({ status: 'NOT_FOUND' }, criterio);
+        });
+    }
+
+    function mostrarModalResultado(res, criterioBuscado) {
+      var modal = document.getElementById('resultadoModal');
+      var banner = document.getElementById('estadoBanner');
+      var icono = document.getElementById('estadoIcono');
+      var txtEstado = document.getElementById('estadoTexto');
+      var subEstado = document.getElementById('estadoSubtexto');
+      var boxObs = document.getElementById('boxObservaciones');
+
+      if (!res || res.status === 'NOT_FOUND') {
+        playBeep(false);
+        vibrarTactil(false);
+
+        banner.className = "p-4 text-center text-white flex flex-col items-center justify-center gap-1 bg-red-600";
+        icono.className = "w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-white/20 mb-1";
+        icono.innerHTML = `<i class="fa-solid fa-ban"></i>`;
+        txtEstado.innerText = "NO ENCONTRADO";
+        subEstado.innerText = "Documento no registrado en la base de datos";
+        
+        document.getElementById('resFoto').src = SVG_NO_FOTO;
+        document.getElementById('resTagTipo').innerText = "NO REG.";
+        document.getElementById('resSolicitudId').innerText = "SIN REGISTRO";
+        document.getElementById('resNombre').innerText = "NO ENCONTRADO";
+        document.getElementById('resDocumento').innerText = "Búsqueda: " + criterioBuscado;
+        document.getElementById('resEmpresa').innerText = "Sin registros en las 3 bases de datos";
+        document.getElementById('resLocaciones').innerText = "NINGUNA";
+        document.getElementById('resZonas').innerText = "ACCESO DENEGADO";
+        boxObs.classList.add('hidden');
+
+        modal.classList.remove('hidden');
+      } else {
+        var estado = (res.estadoSeguridad || '').toUpperCase();
+        var esAprobado = estado.includes('APROBAD');
+        var esObservado = estado.includes('OBSERVAD') || estado.includes('PENDIENTE');
+
+        if (esAprobado) {
+          playBeep(true);
+          vibrarTactil(true);
+
+          banner.className = "p-4 text-center text-slate-950 flex flex-col items-center justify-center gap-1 bg-emerald-400";
+          icono.className = "w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-emerald-950/20 text-slate-950 mb-1";
+          icono.innerHTML = `<i class="fa-solid fa-check-double"></i>`;
+          txtEstado.innerText = "ACCESO PERMITIDO";
+          subEstado.innerText = "AUDITORÍA MIN. DEL INTERIOR: APROBADA";
+        } else if (esObservado) {
+          playBeep(false);
+          vibrarTactil(false);
+
+          banner.className = "p-4 text-center text-slate-950 flex flex-col items-center justify-center gap-1 bg-yellow-400";
+          icono.className = "w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-yellow-950/20 text-slate-950 mb-1";
+          icono.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+          txtEstado.innerText = "RETENER / OBSERVADO";
+          subEstado.innerText = estado;
+        } else {
+          playBeep(false);
+          vibrarTactil(false);
+
+          banner.className = "p-4 text-center text-white flex flex-col items-center justify-center gap-1 bg-rose-700";
+          icono.className = "w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-white/20 text-white mb-1";
+          icono.innerHTML = `<i class="fa-solid fa-hand"></i>`;
+          txtEstado.innerText = "ACCESO DENEGADO";
+          subEstado.innerText = "ALERTA DE SEGURIDAD DEL ESTADO";
+        }
+
+        document.getElementById('resFoto').src = (res.urlFoto && res.urlFoto.startsWith('http')) ? res.urlFoto : SVG_NO_FOTO;
+        document.getElementById('resTagTipo').innerText = res.tipo || "ACRED";
+        document.getElementById('resSolicitudId').innerText = res.solicitudId || "2026";
+        document.getElementById('resNombre').innerText = res.nombreCompleto || res.matricula || "AUTORIZADO";
+        document.getElementById('resDocumento').innerText = res.documento ? `CI: ${res.documento}` : `Matrícula: ${res.matricula}`;
+        document.getElementById('resEmpresa').innerText = res.empresa || res.institucionMedio || res.tipoVehiculo || res.funcion || "";
+        document.getElementById('resLocaciones').innerText = res.locaciones || "LOC-01 Estadio";
+        document.getElementById('resZonas').innerText = res.zonasSAD || res.portonIngreso || "ZONAS ESTÁNDAR";
+
+        if (res.observaciones && res.observaciones.trim() !== '') {
+          document.getElementById('resObservaciones').innerText = res.observaciones;
+          boxObs.classList.remove('hidden');
+        } else {
+          boxObs.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function cerrarResultado() {
+      document.getElementById('resultadoModal').classList.add('hidden');
+      document.getElementById('inputManual').value = '';
+      setTimeout(() => {
+        isProcessing = false;
+      }, 500);
+    }
+  </script>
+</body>
+</html>

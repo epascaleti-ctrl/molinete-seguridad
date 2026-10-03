@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="90" fill="none" stroke="#eab308" stroke-width="6" opacity="0.4" />
+  
+  <!-- Outer Shield -->
+  <path d="M 256,70 L 390,130 C 390,260 340,365 256,430 C 172,365 122,260 122,130 Z" fill="#1e293b" stroke="url(#goldGrad)" stroke-width="12" stroke-linejoin="round" />
+  
+  <!-- Inner Shield Highlight -->
+  <path d="M 256,105 L 360,152 C 360,250 320,335 256,390 C 192,335 152,250 152,152 Z" fill="#090d16" stroke="#334155" stroke-width="4" />
+  
+  <!-- QR and Check Icon -->
+  <rect x="200" y="170" width="112" height="112" rx="12" fill="none" stroke="url(#goldGrad)" stroke-width="8" />
+  <rect x="226" y="196" width="60" height="60" rx="6" fill="#eab308" />
+  <circle x="256" y="226" r="14" fill="#090d16" />
+  
+  <!-- Laser Beam Line -->
+  <line x1="170" y1="226" x2="342" y2="226" stroke="#ef4444" stroke-width="6" stroke-linecap="round" />
+  
+  <!-- Text VP 2026 -->
+  <text x="256" y="345" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" text-anchor="middle" letter-spacing="3">VISITA PAPAL</text>
+  <text x="256" y="375" fill="#eab308" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" letter-spacing="2">SEGURIDAD 2026</text>
+</svg>
